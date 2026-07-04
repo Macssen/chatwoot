@@ -41,7 +41,10 @@ class Channel::TwilioSms < ApplicationRecord
 
   EDITABLE_ATTRS = [
     :account_sid,
-    :auth_token
+    :auth_token,
+    :api_key_sid,
+    :api_key_secret,
+    :voice_enabled
   ].freeze
 
   # Must have _one_ of messaging_service_sid _or_ phone_number, and messaging_service_sid is preferred
@@ -51,13 +54,50 @@ class Channel::TwilioSms < ApplicationRecord
 
   enum medium: { sms: 0, whatsapp: 1 }
 
+  # Provision/tear down the Twilio-side voice wiring whenever the flag flips
+  # (including creation of voice channels, which start with voice_enabled: true).
+  after_save :sync_voice_setup, if: :saved_change_to_voice_enabled?
+
   def name
     medium == 'sms' ? 'Twilio SMS' : 'Whatsapp'
+  end
+
+  # Voice is live only when the Twilio wiring is on AND the account has the
+  # channel_voice feature. Overrides the bare AR boolean predicate.
+  def voice_enabled?
+    self[:voice_enabled] && account.feature_enabled?('channel_voice')
   end
 
   # Mutes only the incoming side of calling; default on, so only an explicit false disables inbound.
   def inbound_calls_enabled?
     provider_config['inbound_calls_enabled'] != false
+  end
+
+  def voice_call_webhook_url
+    twilio_voice_call_url(phone: phone_number)
+  end
+
+  def voice_status_webhook_url
+    twilio_voice_status_url(phone: phone_number)
+  end
+
+  def voice_conference_status_webhook_url
+    twilio_voice_conference_status_url(phone: phone_number)
+  end
+
+  def voice_recording_status_webhook_url
+    twilio_voice_recording_status_url(phone: phone_number)
+  end
+
+  # Twilio REST credentials for media downloads (basic auth pair).
+  def rest_credentials
+    api_key_sid.present? ? [api_key_sid, voice_api_secret] : [account_sid, auth_token]
+  end
+
+  # The API secret for JWT minting; the dedicated column wins, with auth_token
+  # doubling as the secret for channels created before the column existed.
+  def voice_api_secret
+    api_key_secret.presence || auth_token
   end
 
   def send_message(to:, body:, media_url: nil)
@@ -76,6 +116,14 @@ class Channel::TwilioSms < ApplicationRecord
   end
 
   private
+
+  def sync_voice_setup
+    if self[:voice_enabled]
+      Twilio::VoiceWebhookSetupService.new(channel: self).perform
+    else
+      Twilio::VoiceTeardownService.new(channel: self).perform
+    end
+  end
 
   def send_message_from
     if messaging_service_sid?

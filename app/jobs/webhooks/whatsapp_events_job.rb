@@ -27,10 +27,31 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
   end
 
   def process_events(channel, params)
-    if message_echo_event?(params)
+    if call_event?(params)
+      handle_call_events(channel, params)
+    elsif message_echo_event?(params)
       handle_message_echo(channel, params)
     else
       handle_message_events(channel, params)
+    end
+  end
+
+  # Calling webhooks arrive under field "calls" (call events and call status
+  # updates). They carry no messages[] so they bypass the sender mutex above —
+  # serialize per provider call id instead, since connect/terminate/status
+  # events for one call can arrive out of order.
+  def call_event?(params)
+    params.dig(:entry, 0, :changes, 0, :field) == 'calls'
+  end
+
+  def handle_call_events(channel, params)
+    value = params.dig(:entry, 0, :changes, 0, :value) || {}
+    call_id = value.dig(:calls, 0, :id) || value.dig(:statuses, 0, :id)
+    return if call_id.blank?
+
+    key = format(::Redis::Alfred::WHATSAPP_CALL_MUTEX, call_id: call_id)
+    with_lock(key, 15.seconds) do
+      Whatsapp::IncomingCallService.new(inbox: channel.inbox, value: value).perform
     end
   end
 

@@ -131,6 +131,7 @@ class Message < ApplicationRecord
   belongs_to :sender, polymorphic: true, optional: true
 
   has_many :attachments, dependent: :destroy, autosave: true, before_add: :validate_attachments_limit
+  has_one :call, dependent: :nullify
   has_one :csat_survey_response, dependent: :destroy_async
   has_many :notifications, as: :primary_actor, dependent: :destroy_async
 
@@ -152,7 +153,12 @@ class Message < ApplicationRecord
     )
     data[:echo_id] = echo_id if echo_id.present?
     data[:attachments] = attachments.map(&:push_event_data) if attachments.present?
-    merge_sender_attributes(data)
+    merge_sender_attributes(merge_call_attributes(data))
+  end
+
+  def merge_call_attributes(data)
+    data[:call] = call.push_event_data if voice_call? && call.present?
+    data
   end
 
   def conversation_push_event_data

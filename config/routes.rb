@@ -216,7 +216,7 @@ Rails.application.routes.draw do
               resources :labels, only: [:create, :index]
               resources :notes
               get :attachments, to: 'attachments#index'
-              post :call, on: :member, to: 'calls#create' if ChatwootApp.enterprise?
+              post :call, on: :member, to: 'calls#create'
             end
           end
           resources :csat_survey_responses, only: [:index] do
@@ -236,17 +236,15 @@ Rails.application.routes.draw do
           end
           resources :reporting_events, only: [:index] if ChatwootApp.enterprise?
 
-          if ChatwootApp.enterprise?
-            resources :whatsapp_calls, only: [:show] do
-              member do
-                post :accept
-                post :reject
-                post :terminate
-                post :upload_recording
-              end
-              collection do
-                post :initiate
-              end
+          resources :whatsapp_calls, only: [:show] do
+            member do
+              post :accept
+              post :reject
+              post :terminate
+              post :upload_recording
+            end
+            collection do
+              post :initiate
             end
           end
 
@@ -262,14 +260,12 @@ Rails.application.routes.draw do
             get :health, on: :member
             post :register_webhook, on: :member
             post :reset_secret, on: :member
-            if ChatwootApp.enterprise?
-              resource :conference, only: %i[create destroy], controller: 'conference' do
-                get :token, on: :member
-              end
-              post :enable_whatsapp_calling, on: :member
-              post :disable_whatsapp_calling, on: :member
-              post :set_inbound_calls, on: :member
+            resource :conference, only: %i[create destroy], controller: 'conference' do
+              get :token, on: :member
             end
+            post :enable_whatsapp_calling, on: :member
+            post :disable_whatsapp_calling, on: :member
+            post :set_inbound_calls, on: :member
 
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates' do
               post :analyze, on: :collection
@@ -645,12 +641,10 @@ Rails.application.routes.draw do
     resources :callback, only: [:create]
     resources :delivery_status, only: [:create]
 
-    if ChatwootApp.enterprise?
-      post 'voice/call/:phone', to: 'voice#call_twiml', as: :voice_call
-      post 'voice/status/:phone', to: 'voice#status', as: :voice_status
-      post 'voice/conference_status/:phone', to: 'voice#conference_status', as: :voice_conference_status
-      post 'voice/recording_status/:phone', to: 'voice#recording_status', as: :voice_recording_status
-    end
+    post 'voice/call/:phone', to: 'voice#call_twiml', as: :voice_call
+    post 'voice/status/:phone', to: 'voice#status', as: :voice_status
+    post 'voice/conference_status/:phone', to: 'voice#conference_status', as: :voice_conference_status
+    post 'voice/recording_status/:phone', to: 'voice#recording_status', as: :voice_recording_status
   end
 
   get 'microsoft/callback', to: 'microsoft/callbacks#show'

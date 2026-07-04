@@ -79,6 +79,8 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     "#{api_base_path}/v13.0/#{media_id}"
   end
 
+  include Whatsapp::Providers::WhatsappCloudCalling
+
   private
 
   def csat_template_service

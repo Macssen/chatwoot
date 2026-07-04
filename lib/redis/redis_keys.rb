@@ -70,6 +70,10 @@ module Redis::RedisKeys
   SLACK_MESSAGE_MUTEX = 'SLACK_MESSAGE_LOCK::%<conversation_id>s::%<reference_id>s'.freeze
   EMAIL_MESSAGE_MUTEX = 'EMAIL_CHANNEL_LOCK::%<inbox_id>s'.freeze
   WHATSAPP_MESSAGE_MUTEX = 'WHATSAPP_MESSAGE_CREATE_LOCK::%<inbox_id>s::%<sender_id>s'.freeze
+  # Serializes webhook processing per WhatsApp call so out-of-order events can't race
+  WHATSAPP_CALL_MUTEX = 'WHATSAPP_CALL_EVENT_LOCK::%<call_id>s'.freeze
+  # Throttles WhatsApp call-permission request messages per contact inbox
+  WHATSAPP_CALL_PERMISSION_THROTTLE = 'WHATSAPP_CALL_PERMISSION_THROTTLE::%<contact_inbox_id>s'.freeze
   CRM_PROCESS_MUTEX = 'CRM_PROCESS_MUTEX::%<hook_id>s'.freeze
   CAPTAIN_DOCUMENT_SYNC_MUTEX = 'CAPTAIN_DOCUMENT_SYNC_LOCK::%<document_id>s'.freeze
 

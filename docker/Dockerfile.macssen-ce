@@ -1,0 +1,13 @@
+# Macssen CE image: stock build minus the enterprise-licensed overlay.
+# Build (from repo root):
+#   docker build -f docker/Dockerfile -t macssen/chatwoot:base .
+#   docker build -f docker/Dockerfile.macssen-ce -t macssen/chatwoot:<tag> .
+# The enterprise/ directory must not ship in a production image without a
+# Chatwoot Enterprise subscription; DISABLE_ENTERPRISE is set as a second
+# guard so the overlay can never load even if the directory reappears.
+ARG BASE_IMAGE=macssen/chatwoot:base
+FROM ${BASE_IMAGE}
+
+RUN rm -rf /app/enterprise /app/spec
+
+ENV DISABLE_ENTERPRISE=true
