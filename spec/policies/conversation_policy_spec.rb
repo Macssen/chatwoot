@@ -69,5 +69,73 @@ RSpec.describe ConversationPolicy, type: :policy do
         expect(subject).not_to permit(agent_context, conversation)
       end
     end
+
+    context 'when agent has a custom role' do
+      let(:inbox) { create(:inbox, account: account) }
+      let(:custom_role) { create(:custom_role, account: account, permissions: permissions) }
+
+      before do
+        create(:inbox_member, user: agent, inbox: inbox)
+        agent.account_users.find_by(account: account).update!(custom_role: custom_role)
+      end
+
+      context 'with conversation_manage' do
+        let(:permissions) { ['conversation_manage'] }
+        let(:conversation) { create(:conversation, account: account, inbox: inbox) }
+
+        it 'allows access to any conversation in the inbox' do
+          expect(subject).to permit(agent_context, conversation)
+        end
+      end
+
+      context 'with conversation_unassigned_manage' do
+        let(:permissions) { ['conversation_unassigned_manage'] }
+
+        it 'allows access to unassigned conversations' do
+          conversation = create(:conversation, account: account, inbox: inbox)
+          expect(subject).to permit(agent_context, conversation)
+        end
+
+        it 'allows access to own conversations' do
+          conversation = create(:conversation, account: account, inbox: inbox, assignee: agent)
+          expect(subject).to permit(agent_context, conversation)
+        end
+
+        it 'denies access to conversations assigned to others' do
+          other_agent = create(:user, account: account, role: :agent)
+          conversation = create(:conversation, account: account, inbox: inbox, assignee: other_agent)
+          expect(subject).not_to permit(agent_context, conversation)
+        end
+      end
+
+      context 'with conversation_participating_manage' do
+        let(:permissions) { ['conversation_participating_manage'] }
+
+        it 'allows access to own conversations' do
+          conversation = create(:conversation, account: account, inbox: inbox, assignee: agent)
+          expect(subject).to permit(agent_context, conversation)
+        end
+
+        it 'allows access to conversations the agent participates in' do
+          conversation = create(:conversation, account: account, inbox: inbox)
+          create(:conversation_participant, conversation: conversation, user: agent)
+          expect(subject).to permit(agent_context, conversation)
+        end
+
+        it 'denies access to unassigned conversations' do
+          conversation = create(:conversation, account: account, inbox: inbox)
+          expect(subject).not_to permit(agent_context, conversation)
+        end
+      end
+
+      context 'without conversation permissions' do
+        let(:permissions) { ['contact_manage'] }
+        let(:conversation) { create(:conversation, account: account, inbox: inbox) }
+
+        it 'denies access' do
+          expect(subject).not_to permit(agent_context, conversation)
+        end
+      end
+    end
   end
 end

@@ -4,6 +4,7 @@ class Api::V1::Accounts::Contacts::BaseController < Api::V1::Accounts::BaseContr
   private
 
   def ensure_contact
-    @contact = Current.account.contacts.find(params[:contact_id])
+    contacts = Contacts::PermissionFilterService.new(Current.account.contacts, Current.user, Current.account).perform
+    @contact = contacts.find(params[:contact_id])
   end
 end

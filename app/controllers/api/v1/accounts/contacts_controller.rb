@@ -131,6 +131,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def fetch_contacts(contacts)
+    contacts = permission_filtered(contacts)
     # Build includes hash to avoid separate query when contact_inboxes are needed
     includes_hash = { avatar_attachment: [:blob] }
     includes_hash[:contact_inboxes] = { inbox: :channel } if @include_contact_inboxes
@@ -142,6 +143,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def fetch_contacts_with_has_more(contacts)
+    contacts = permission_filtered(contacts)
     includes_hash = { avatar_attachment: [:blob] }
     includes_hash[:contact_inboxes] = { inbox: :channel } if @include_contact_inboxes
 
@@ -201,9 +203,13 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def fetch_contact
-    contact_scope = Current.account.contacts
+    contact_scope = permission_filtered(Current.account.contacts)
     contact_scope = contact_scope.includes(contact_inboxes: [:inbox]) if @include_contact_inboxes
     @contact = contact_scope.find(params[:id])
+  end
+
+  def permission_filtered(contacts)
+    Contacts::PermissionFilterService.new(contacts, Current.user, Current.account).perform
   end
 
   def process_avatar_from_url

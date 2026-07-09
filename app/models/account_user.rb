@@ -30,6 +30,7 @@ class AccountUser < ApplicationRecord
   belongs_to :account
   belongs_to :user
   belongs_to :inviter, class_name: 'User', optional: true
+  belongs_to :custom_role, optional: true
 
   enum role: { agent: 0, administrator: 1 }
   enum availability: { online: 0, offline: 1, busy: 2 }
@@ -54,6 +55,8 @@ class AccountUser < ApplicationRecord
   end
 
   def permissions
+    return custom_role.permissions + ['custom_role'] if custom_role.present?
+
     administrator? ? ['administrator'] : ['agent']
   end
 

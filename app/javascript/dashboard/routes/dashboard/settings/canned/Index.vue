@@ -1,5 +1,6 @@
 <script setup>
 import { useAlert } from 'dashboard/composables';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 import AddCanned from './AddCanned.vue';
 import EditCanned from './EditCanned.vue';
 import SettingsLayout from '../SettingsLayout.vue';
@@ -25,6 +26,7 @@ defineOptions({
 const getters = useStoreGetters();
 const store = useStore();
 const { t } = useI18n();
+const { isAdmin } = useAdmin();
 
 const { getPlainText } = useMessageFormatter();
 
@@ -222,7 +224,10 @@ const tableHeaders = computed(() => {
               </BaseTableCell>
 
               <BaseTableCell align="end" class="w-24">
-                <div class="flex gap-3 justify-end flex-shrink-0">
+                <div
+                  v-if="isAdmin"
+                  class="flex gap-3 justify-end flex-shrink-0"
+                >
                   <Button
                     v-tooltip.top="$t('CANNED_MGMT.EDIT.BUTTON_TEXT')"
                     icon="i-woot-edit-pen"

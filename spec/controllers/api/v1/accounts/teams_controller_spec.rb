@@ -26,6 +26,26 @@ RSpec.describe 'Teams API', type: :request do
         expect(response.parsed_body.first['id']).to eq(account.teams.first.id)
       end
     end
+
+    context 'when it is an agent with a custom role' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+      let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_manage']) }
+      let!(:my_team) { create(:team, account: account) }
+
+      before do
+        create(:team_member, team: my_team, user: agent)
+        agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+      end
+
+      it 'returns only the teams the agent belongs to' do
+        get "/api/v1/accounts/#{account.id}/teams",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body.map { |t| t['id'] }).to eq([my_team.id])
+      end
+    end
   end
 
   describe 'GET /api/v1/accounts/{account.id}/teams/{team_id}' do

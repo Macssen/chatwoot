@@ -817,4 +817,78 @@ RSpec.describe 'Contacts API', type: :request do
       end
     end
   end
+
+  describe 'contact visibility for agents with a custom role' do
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let(:inbox) { create(:inbox, account: account) }
+    let(:other_inbox) { create(:inbox, account: account) }
+    let(:custom_role) { create(:custom_role, account: account, permissions: permissions) }
+
+    let!(:my_contact) { create(:contact, :with_email, account: account) }
+    let!(:foreign_contact) { create(:contact, :with_email, account: account) }
+
+    before do
+      create(:inbox_member, user: agent, inbox: inbox)
+      create(:conversation, account: account, inbox: inbox, contact: my_contact, assignee: agent)
+      create(:conversation, account: account, inbox: other_inbox, contact: foreign_contact)
+      agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+    end
+
+    context 'without contact_manage permission' do
+      let(:permissions) { ['conversation_participating_manage'] }
+
+      it 'lists only contacts from visible conversations' do
+        get "/api/v1/accounts/#{account.id}/contacts",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        contact_ids = response.parsed_body['payload'].pluck('id')
+        expect(contact_ids).to eq([my_contact.id])
+      end
+
+      it 'searches only within contacts from visible conversations' do
+        get "/api/v1/accounts/#{account.id}/contacts/search",
+            params: { q: foreign_contact.email },
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['payload']).to be_empty
+      end
+
+      it 'returns not found for contacts outside the visible scope' do
+        get "/api/v1/accounts/#{account.id}/contacts/#{foreign_contact.id}",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it 'filters only within contacts from visible conversations' do
+        post "/api/v1/accounts/#{account.id}/contacts/filter",
+             params: { payload: [email_filter.merge(values: 'example', query_operator: nil)] },
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:success)
+        contact_ids = response.parsed_body['payload'].pluck('id')
+        expect(contact_ids).not_to include(foreign_contact.id)
+      end
+    end
+
+    context 'with contact_manage permission' do
+      let(:permissions) { ['contact_manage'] }
+
+      it 'lists all contacts of the account' do
+        get "/api/v1/accounts/#{account.id}/contacts",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        contact_ids = response.parsed_body['payload'].pluck('id')
+        expect(contact_ids).to contain_exactly(my_contact.id, foreign_contact.id)
+      end
+    end
+  end
 end

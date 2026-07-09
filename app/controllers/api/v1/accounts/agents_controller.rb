@@ -20,11 +20,13 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
     )
 
     @agent = builder.perform
+    assign_custom_role
   end
 
   def update
     @agent.update!(agent_params.slice(:name).compact)
     @agent.current_account_user.update!(agent_params.slice(*account_user_attributes).compact)
+    assign_custom_role
   end
 
   def destroy
@@ -83,8 +85,33 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
     params.require(:agent).permit(:email, :name, :role, :availability, :auto_offline)
   end
 
+  # The dashboard sends custom_role_id as a top-level param, with an explicit
+  # null to switch the member back to a standard role.
+  def assign_custom_role
+    return unless params.key?(:custom_role_id)
+
+    custom_role = params[:custom_role_id].present? ? Current.account.custom_roles.find(params[:custom_role_id]) : nil
+    @agent.current_account_user.update!(custom_role: custom_role)
+  end
+
   def agents
-    @agents ||= Current.account.users.order_by_full_name.includes(:account_users, { avatar_attachment: [:blob] })
+    @agents ||= scoped_agents.order_by_full_name.includes(:account_users, { avatar_attachment: [:blob] })
+  end
+
+  def scoped_agents
+    users = Current.account.users
+    return users unless restricted_by_custom_role?
+
+    shared_inbox_ids = Current.user.inboxes.where(account_id: Current.account.id).select(:id)
+    shared_agent_ids = InboxMember.where(inbox_id: shared_inbox_ids).select(:user_id)
+
+    users.where(id: shared_agent_ids)
+         .or(users.where(id: Current.account.administrators.select(:id)))
+         .or(users.where(id: Current.user.id))
+  end
+
+  def restricted_by_custom_role?
+    Current.account_user.custom_role_id.present? && !Current.account_user.administrator?
   end
 
   def validate_limit_for_bulk_create

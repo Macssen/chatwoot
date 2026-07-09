@@ -3,7 +3,11 @@ class Api::V1::Accounts::TeamsController < Api::V1::Accounts::BaseController
   before_action :check_authorization
 
   def index
-    @teams = Current.account.teams
+    @teams = if restricted_by_custom_role?
+               Current.user.teams.where(account_id: Current.account.id)
+             else
+               Current.account.teams
+             end
   end
 
   def show; end
@@ -30,5 +34,9 @@ class Api::V1::Accounts::TeamsController < Api::V1::Accounts::BaseController
 
   def team_params
     params.require(:team).permit(:name, :description, :allow_auto_assign, :icon, :icon_color)
+  end
+
+  def restricted_by_custom_role?
+    Current.account_user.custom_role_id.present? && !Current.account_user.administrator?
   end
 end

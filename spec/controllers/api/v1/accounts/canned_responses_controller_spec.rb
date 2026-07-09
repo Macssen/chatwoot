@@ -88,13 +88,25 @@ RSpec.describe 'Canned Responses API', type: :request do
 
     context 'when it is an authenticated user' do
       let(:agent) { create(:user, account: account, role: :agent) }
+      let(:administrator) { create(:user, account: account, role: :administrator) }
 
-      it 'updates an existing canned response' do
+      it 'returns unauthorized for an agent' do
         params = { short_code: 'B' }
 
         put "/api/v1/accounts/#{account.id}/canned_responses/#{canned_response.id}",
             params: params,
             headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it 'updates an existing canned response when administrator' do
+        params = { short_code: 'B' }
+
+        put "/api/v1/accounts/#{account.id}/canned_responses/#{canned_response.id}",
+            params: params,
+            headers: administrator.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
@@ -116,10 +128,19 @@ RSpec.describe 'Canned Responses API', type: :request do
 
     context 'when it is an authenticated user' do
       let(:agent) { create(:user, account: account, role: :agent) }
+      let(:administrator) { create(:user, account: account, role: :administrator) }
 
-      it 'destroys the canned response' do
+      it 'returns unauthorized for an agent' do
         delete "/api/v1/accounts/#{account.id}/canned_responses/#{canned_response.id}",
                headers: agent.create_new_auth_token,
+               as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it 'destroys the canned response when administrator' do
+        delete "/api/v1/accounts/#{account.id}/canned_responses/#{canned_response.id}",
+               headers: administrator.create_new_auth_token,
                as: :json
 
         expect(response).to have_http_status(:success)

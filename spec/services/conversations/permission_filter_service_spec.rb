@@ -43,5 +43,61 @@ RSpec.describe Conversations::PermissionFilterService do
         expect(result.count).to eq(2)
       end
     end
+
+    context 'when user is an agent with a custom role' do
+      let(:another_agent) { create(:user, account: account, role: :agent) }
+
+      # Assignees must be inbox members; otherwise saving the conversation
+      # triggers legacy round-robin auto-assignment.
+      before { create(:inbox_member, user: another_agent, inbox: inbox) }
+
+      let!(:assigned_conversation) { create(:conversation, account: account, inbox: inbox, assignee: agent) }
+      let!(:other_assigned_conversation) { create(:conversation, account: account, inbox: inbox, assignee: another_agent) }
+      let(:custom_role) { create(:custom_role, account: account, permissions: permissions) }
+      let(:result) { described_class.new(account.conversations, agent, account).perform }
+
+      before do
+        agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+      end
+
+      context 'with conversation_manage' do
+        let(:permissions) { ['conversation_manage'] }
+
+        it 'returns all accessible conversations' do
+          expect(result).to contain_exactly(conversation, another_conversation, assigned_conversation, other_assigned_conversation)
+        end
+
+        it 'excludes conversations from inboxes the agent does not belong to' do
+          other_inbox = create(:inbox, account: account)
+          foreign_conversation = create(:conversation, account: account, inbox: other_inbox)
+
+          expect(result).not_to include(foreign_conversation)
+        end
+      end
+
+      context 'with conversation_unassigned_manage' do
+        let(:permissions) { ['conversation_unassigned_manage'] }
+
+        it 'returns unassigned and own conversations' do
+          expect(result).to contain_exactly(conversation, another_conversation, assigned_conversation)
+        end
+      end
+
+      context 'with conversation_participating_manage' do
+        let(:permissions) { ['conversation_participating_manage'] }
+
+        it 'returns only own conversations' do
+          expect(result).to contain_exactly(assigned_conversation)
+        end
+      end
+
+      context 'without conversation permissions' do
+        let(:permissions) { ['contact_manage'] }
+
+        it 'returns no conversations' do
+          expect(result).to be_empty
+        end
+      end
+    end
   end
 end

@@ -26,6 +26,13 @@ RSpec.describe AccountUser do
       account_user.administrator!
       expect(account_user.permissions).to eq(['administrator'])
     end
+
+    it 'returns the custom role permissions plus the custom_role marker when a custom role is assigned' do
+      custom_role = create(:custom_role, account: account_user.account, permissions: %w[conversation_manage contact_manage])
+      account_user.update!(custom_role: custom_role)
+
+      expect(account_user.permissions).to eq(%w[conversation_manage contact_manage custom_role])
+    end
   end
 
   describe 'destroy call agent::destroy service' do

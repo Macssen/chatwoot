@@ -41,6 +41,31 @@ RSpec.describe 'Agents API', type: :request do
         expect(data.first['custom_attributes']['test']).to eq('test')
       end
     end
+
+    context 'when it is an agent with a custom role' do
+      let!(:restricted_agent) { create(:user, account: account, role: :agent) }
+      let!(:inbox_mate) { create(:user, account: account, role: :agent) }
+      let!(:unrelated_agent) { create(:user, account: account, role: :agent) }
+      let(:inbox) { create(:inbox, account: account) }
+      let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_manage']) }
+
+      before do
+        create(:inbox_member, user: restricted_agent, inbox: inbox)
+        create(:inbox_member, user: inbox_mate, inbox: inbox)
+        restricted_agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+      end
+
+      it 'returns only inbox mates, administrators and the agent itself' do
+        get "/api/v1/accounts/#{account.id}/agents",
+            headers: restricted_agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        agent_ids = response.parsed_body.map { |a| a['id'] }
+        expect(agent_ids).to contain_exactly(restricted_agent.id, inbox_mate.id, admin.id)
+        expect(agent_ids).not_to include(unrelated_agent.id)
+      end
+    end
   end
 
   describe 'DELETE /api/v1/accounts/{account.id}/agents/:id' do
@@ -139,6 +164,56 @@ RSpec.describe 'Agents API', type: :request do
         expect(response_data['availability_status']).to eq('busy')
         expect(response_data['auto_offline']).to be(false)
         expect(other_agent.account_users.first.role).to eq('administrator')
+      end
+
+      it 'assigns a custom role sent as a top-level param' do
+        custom_role = create(:custom_role, account: account)
+
+        put "/api/v1/accounts/#{account.id}/agents/#{other_agent.id}",
+            params: { agent: { role: 'agent' }, custom_role_id: custom_role.id },
+            headers: admin.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(other_agent.account_users.first.custom_role_id).to eq(custom_role.id)
+      end
+
+      it 'clears the custom role when custom_role_id is null' do
+        custom_role = create(:custom_role, account: account)
+        other_agent.account_users.first.update!(custom_role: custom_role)
+
+        put "/api/v1/accounts/#{account.id}/agents/#{other_agent.id}",
+            params: { agent: { role: 'agent' }, custom_role_id: nil },
+            headers: admin.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(other_agent.account_users.first.reload.custom_role_id).to be_nil
+      end
+
+      it 'keeps the custom role when custom_role_id is not sent' do
+        custom_role = create(:custom_role, account: account)
+        other_agent.account_users.first.update!(custom_role: custom_role)
+
+        put "/api/v1/accounts/#{account.id}/agents/#{other_agent.id}",
+            params: { agent: { name: 'TestUser' } },
+            headers: admin.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(other_agent.account_users.first.reload.custom_role_id).to eq(custom_role.id)
+      end
+
+      it 'returns not found for a custom role belonging to another account' do
+        other_account_role = create(:custom_role)
+
+        put "/api/v1/accounts/#{account.id}/agents/#{other_agent.id}",
+            params: { agent: { role: 'agent' }, custom_role_id: other_account_role.id },
+            headers: admin.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:not_found)
+        expect(other_agent.account_users.first.reload.custom_role_id).to be_nil
       end
     end
   end

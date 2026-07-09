@@ -8,11 +8,11 @@ class ContactPolicy < ApplicationPolicy
   end
 
   def import?
-    @account_user.administrator?
+    @account_user.administrator? || custom_role_permission?('contact_manage')
   end
 
   def export?
-    @account_user.administrator?
+    @account_user.administrator? || custom_role_permission?('contact_manage')
   end
 
   def search?
