@@ -50,6 +50,25 @@ RSpec.describe 'Assignable Agents API', type: :request do
       end
     end
 
+    context 'when the user is an agent with a custom role' do
+      let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_manage']) }
+
+      before do
+        agent1.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+      end
+
+      it 'returns only inbox members, without account administrators' do
+        get "/api/v1/accounts/#{account.id}/assignable_agents",
+            params: { inbox_ids: [inbox1.id, inbox2.id] },
+            headers: agent1.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        response_data = JSON.parse(response.body, symbolize_names: true)[:payload]
+        expect(response_data.pluck(:id)).to contain_exactly(agent1.id)
+      end
+    end
+
     context 'when the user is part of the inbox' do
       it 'returns all assignable inbox members along with administrators' do
         get "/api/v1/accounts/#{account.id}/assignable_agents",

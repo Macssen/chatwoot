@@ -249,6 +249,35 @@ RSpec.describe 'Inboxes API', type: :request do
         expect(response_data.pluck(:role)).to include('agent', 'administrator')
       end
     end
+
+    context 'when it is an agent with a custom role' do
+      let(:restricted_agent) { create(:user, account: account, role: :agent) }
+      let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_manage']) }
+
+      before do
+        restricted_agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+      end
+
+      it 'returns unauthorized for inboxes the agent does not belong to' do
+        get "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}/assignable_agents",
+            headers: restricted_agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it 'returns only members for inboxes the agent belongs to, without administrators' do
+        create(:inbox_member, user: restricted_agent, inbox: inbox)
+
+        get "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}/assignable_agents",
+            headers: restricted_agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        response_data = JSON.parse(response.body, symbolize_names: true)[:payload]
+        expect(response_data.pluck(:id)).to contain_exactly(restricted_agent.id)
+      end
+    end
   end
 
   describe 'GET /api/v1/accounts/{account.id}/inboxes/{inbox.id}/campaigns' do

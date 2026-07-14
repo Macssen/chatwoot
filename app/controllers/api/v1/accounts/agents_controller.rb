@@ -98,20 +98,22 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
     @agents ||= scoped_agents.order_by_full_name.includes(:account_users, { avatar_attachment: [:blob] })
   end
 
+  # Custom-role agents must not be able to enumerate the account roster.
+  # Roles that assign/collaborate on conversations see their inbox mates;
+  # everyone else restricted sees only themselves.
   def scoped_agents
     users = Current.account.users
     return users unless restricted_by_custom_role?
+    return users.where(id: Current.user.id) unless custom_role_manages_conversations?
 
     shared_inbox_ids = Current.user.inboxes.where(account_id: Current.account.id).select(:id)
     shared_agent_ids = InboxMember.where(inbox_id: shared_inbox_ids).select(:user_id)
 
-    users.where(id: shared_agent_ids)
-         .or(users.where(id: Current.account.administrators.select(:id)))
-         .or(users.where(id: Current.user.id))
+    users.where(id: shared_agent_ids).or(users.where(id: Current.user.id))
   end
 
-  def restricted_by_custom_role?
-    Current.account_user.custom_role_id.present? && !Current.account_user.administrator?
+  def custom_role_manages_conversations?
+    Current.account_user.custom_role.permissions.intersect?(%w[conversation_manage conversation_unassigned_manage])
   end
 
   def validate_limit_for_bulk_create

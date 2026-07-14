@@ -15,6 +15,20 @@ RSpec.describe 'Agent Bot API', type: :request do
       end
     end
 
+    context 'when it is an agent with a custom role' do
+      let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_manage']) }
+
+      it 'returns unauthorized' do
+        agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+
+        get "/api/v1/accounts/#{account.id}/agent_bots",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
     context 'when it is an authenticated user' do
       it 'returns all the agent_bots in account along with global agent bots' do
         global_bot = create(:agent_bot)

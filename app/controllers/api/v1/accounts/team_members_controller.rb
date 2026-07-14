@@ -43,8 +43,10 @@ class Api::V1::Accounts::TeamMembersController < Api::V1::Accounts::BaseControll
     @current_members_ids ||= @team.members.pluck(:id)
   end
 
+  # Custom-role agents can only list members of teams they belong to.
   def fetch_team
-    @team = Current.account.teams.find(params[:team_id])
+    scope = restricted_by_custom_role? ? Current.user.teams.where(account_id: Current.account.id) : Current.account.teams
+    @team = scope.find(params[:team_id])
   end
 
   def validate_member_id_params

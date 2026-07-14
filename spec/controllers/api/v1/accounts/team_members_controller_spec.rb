@@ -27,6 +27,33 @@ RSpec.describe 'Team Members API', type: :request do
         expect(response.parsed_body.first['id']).to eq(agent.id)
       end
     end
+
+    context 'when it is an agent with a custom role' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+      let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_manage']) }
+
+      before do
+        agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
+      end
+
+      it 'returns not found for teams the agent does not belong to' do
+        get "/api/v1/accounts/#{account.id}/teams/#{team.id}/team_members",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it 'returns members of the agent own teams' do
+        create(:team_member, team: team, user: agent)
+        get "/api/v1/accounts/#{account.id}/teams/#{team.id}/team_members",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body.first['id']).to eq(agent.id)
+      end
+    end
   end
 
   describe 'POST /api/v1/accounts/{account.id}/teams/{team_id}/team_members' do

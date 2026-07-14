@@ -55,15 +55,29 @@ RSpec.describe 'Agents API', type: :request do
         restricted_agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
       end
 
-      it 'returns only inbox mates, administrators and the agent itself' do
+      it 'returns only inbox mates and the agent itself, without administrators' do
         get "/api/v1/accounts/#{account.id}/agents",
             headers: restricted_agent.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
         agent_ids = response.parsed_body.map { |a| a['id'] }
-        expect(agent_ids).to contain_exactly(restricted_agent.id, inbox_mate.id, admin.id)
-        expect(agent_ids).not_to include(unrelated_agent.id)
+        expect(agent_ids).to contain_exactly(restricted_agent.id, inbox_mate.id)
+        expect(agent_ids).not_to include(admin.id, unrelated_agent.id)
+      end
+
+      context 'when the role cannot manage conversations' do
+        let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_participating_manage']) }
+
+        it 'returns only the agent itself' do
+          get "/api/v1/accounts/#{account.id}/agents",
+              headers: restricted_agent.create_new_auth_token,
+              as: :json
+
+          expect(response).to have_http_status(:success)
+          agent_ids = response.parsed_body.map { |a| a['id'] }
+          expect(agent_ids).to contain_exactly(restricted_agent.id)
+        end
       end
     end
   end
