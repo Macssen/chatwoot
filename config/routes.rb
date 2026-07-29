@@ -1,12 +1,15 @@
 Rails.application.routes.draw do
   # AUTH STARTS
+  # Signup goes through POST /api/v1/accounts (gated by ENABLE_ACCOUNT_SIGNUP);
+  # nothing consumes Devise Token Auth's native registration routes, so they are
+  # skipped to keep the unauthenticated surface minimal.
   mount_devise_token_auth_for 'User', at: 'auth', controllers: {
     confirmations: 'devise_overrides/confirmations',
     passwords: 'devise_overrides/passwords',
     sessions: 'devise_overrides/sessions',
     token_validations: 'devise_overrides/token_validations',
     omniauth_callbacks: 'devise_overrides/omniauth_callbacks'
-  }, via: [:get, :post]
+  }, skip: [:registrations], via: [:get, :post]
 
   post 'resend_confirmation', to: 'auth/resend_confirmations#create'
 
