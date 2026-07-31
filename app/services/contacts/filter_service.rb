@@ -9,7 +9,7 @@ class Contacts::FilterService < FilterService
   end
 
   def perform
-    validate_query_operator
+    validate_payload
     @contacts = query_builder(@filters['contacts'])
 
     {
@@ -21,9 +21,9 @@ class Contacts::FilterService < FilterService
   def filter_values(query_hash)
     current_val = query_hash['values'][0]
     if query_hash['attribute_key'] == 'phone_number'
-      "+#{current_val&.delete('+')}"
+      "+#{current_val.to_s.delete('+')}"
     elsif query_hash['attribute_key'] == 'country_code'
-      current_val.downcase
+      current_val.to_s.downcase
     else
       current_val.is_a?(String) ? current_val.downcase : current_val
     end

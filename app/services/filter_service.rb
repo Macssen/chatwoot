@@ -56,7 +56,7 @@ class FilterService
   end
 
   def downcase_array_values(values)
-    values.map(&:downcase)
+    values.map { |value| value.to_s.downcase }
   end
 
   def case_insensitive_values(query_hash)
@@ -70,9 +70,9 @@ class FilterService
   def values_for_ilike(query_hash)
     if query_hash['values'].is_a?(Array)
       query_hash['values']
-        .map { |item| "%#{item.strip}%" }
+        .map { |item| "%#{item.to_s.strip}%" }
     else
-      ["%#{query_hash['values'].strip}%"]
+      ["%#{query_hash['values'].to_s.strip}%"]
     end
   end
 
@@ -98,8 +98,8 @@ class FilterService
   end
 
   def days_before_filter_query(query_hash, current_index)
-    date = Time.zone.today - query_hash['values'][0].to_i.days
-    updated_query_hash = query_hash.with_indifferent_access.merge(
+    date = Time.zone.today - query_hash['values'][0].to_s.to_i.days
+    updated_query_hash = query_hash.to_h.with_indifferent_access.merge(
       values: [date.strftime],
       filter_operator: 'is_less_than'
     )
@@ -185,9 +185,29 @@ class FilterService
     base_relation.where(@query_string, @filter_values.with_indifferent_access)
   end
 
-  def validate_query_operator
+  def validate_payload
+    raise CustomExceptions::CustomFilter::InvalidPayload.new({}) unless @params[:payload].is_a?(Array)
+
     @params[:payload].each do |query_hash|
+      raise CustomExceptions::CustomFilter::InvalidPayload.new({}) unless query_hash.is_a?(Hash) || query_hash.is_a?(ActionController::Parameters)
+
       validate_single_condition(query_hash)
+      validate_condition_values(query_hash)
     end
+  end
+
+  # Values may reach us as a scalar or as an array of scalars. Anything else (nested arrays, objects)
+  # would blow up in the query builder, so it is rejected here and the rest of the flow can assume an array.
+  def validate_condition_values(query_hash)
+    values = query_hash['values']
+    unless scalar_filter_value?(values) || (values.is_a?(Array) && values.all? { |value| scalar_filter_value?(value) })
+      raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: query_hash['attribute_key'])
+    end
+
+    query_hash['values'] = Array.wrap(values)
+  end
+
+  def scalar_filter_value?(value)
+    value.nil? || value.is_a?(String) || value.is_a?(Numeric) || value == true || value == false
   end
 end

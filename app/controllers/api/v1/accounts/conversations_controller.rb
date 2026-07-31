@@ -52,6 +52,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     @conversations = result[:conversations]
     @conversations_count = result[:count]
   rescue CustomExceptions::CustomFilter::InvalidAttribute,
+         CustomExceptions::CustomFilter::InvalidPayload,
          CustomExceptions::CustomFilter::InvalidOperator,
          CustomExceptions::CustomFilter::InvalidQueryOperator,
          CustomExceptions::CustomFilter::InvalidValue => e

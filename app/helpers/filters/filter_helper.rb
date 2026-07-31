@@ -88,6 +88,8 @@ module Filters::FilterHelper
 
   def validate_single_condition(condition)
     return if condition['query_operator'].nil?
+
+    raise CustomExceptions::CustomFilter::InvalidQueryOperator.new({}) unless condition['query_operator'].is_a?(String)
     return if condition['query_operator'].empty?
 
     operator = condition['query_operator'].upcase
@@ -97,14 +99,14 @@ module Filters::FilterHelper
   def conversation_status_values(values)
     return Conversation.statuses.values if values.include?('all')
 
-    values.map { |x| Conversation.statuses[x.to_sym] }
+    values.map { |x| Conversation.statuses[x.to_s.to_sym] }
   end
 
   def conversation_priority_values(values)
-    values.map { |x| Conversation.priorities[x.to_sym] }
+    values.map { |x| Conversation.priorities[x.to_s.to_sym] }
   end
 
   def message_type_values(values)
-    values.map { |x| Message.message_types[x.to_sym] }
+    values.map { |x| Message.message_types[x.to_s.to_sym] }
   end
 end
