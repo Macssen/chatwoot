@@ -109,7 +109,7 @@ class Channel::TwilioSms < ApplicationRecord
 
   def client
     if api_key_sid.present?
-      Twilio::REST::Client.new(api_key_sid, auth_token, account_sid)
+      Twilio::REST::Client.new(api_key_sid, voice_api_secret, account_sid)
     else
       Twilio::REST::Client.new(account_sid, auth_token)
     end

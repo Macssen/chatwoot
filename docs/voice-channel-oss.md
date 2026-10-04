@@ -16,7 +16,9 @@ código de `enterprise/`. Dos transportes:
    inbox usar "Enable WhatsApp calling" (activa calling en Meta y re-registra
    el webhook con el campo `calls`).
 3. **Twilio**: crear inbox de voz (type `voice`) con `account_sid`,
-   `auth_token`, `api_key_sid`, `api_key_secret` y el número. Al activarse se
+   `auth_token` (el Auth Token primario de la cuenta: con él se valida la firma
+   `X-Twilio-Signature` de los webhooks), `api_key_sid`, `api_key_secret` y el
+   número. Al activarse se
    aprovisiona una TwiML App y se apuntan los webhooks del número a
    `/twilio/voice/call/:phone`.
 
@@ -72,8 +74,6 @@ MIT de upstream, sin cambios.
 - La respuesta de permiso de llamada (interactive `call_permission_reply`)
   crea un mensaje vacío en la conversación; no rompe el flujo (el agente
   reintenta la llamada y sale).
-- Webhooks de Twilio validan `AccountSid` pero no la firma X-Twilio-Signature
-  (hardening pendiente).
 - Transcripción (`calls.transcript`) es un placeholder, igual que upstream.
 
 ## Build/Deploy
