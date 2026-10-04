@@ -91,6 +91,13 @@ const channelList = computed(() => {
   }
 
   channels.push({
+    key: 'mercadolibre',
+    title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.MERCADOLIBRE.TITLE'),
+    description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.MERCADOLIBRE.DESCRIPTION'),
+    icon: 'i-ri-shake-hands-line',
+  });
+
+  channels.push({
     key: 'voice',
     title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.VOICE.TITLE'),
     description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.VOICE.DESCRIPTION'),
@@ -114,7 +121,6 @@ const initChannelAuth = channel => {
   };
   router.push({ name: 'settings_inboxes_page_channel', params });
 };
-
 </script>
 
 <template>

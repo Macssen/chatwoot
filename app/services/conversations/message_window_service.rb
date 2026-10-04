@@ -7,6 +7,7 @@ class Conversations::MessageWindowService
   end
 
   def can_reply?
+    return pending_mercadolibre_question? if mercadolibre_pre_sale?
     return true if messaging_window.blank?
 
     last_message_in_messaging_window?(messaging_window)
@@ -62,6 +63,15 @@ class Conversations::MessageWindowService
 
   def meta_messaging_window(config_key)
     GlobalConfigService.load(config_key, nil) ? MESSAGING_WINDOW_7_DAYS : MESSAGING_WINDOW_24_HOURS
+  end
+
+  # A MercadoLibre question takes a single answer, so the pre-sale conversation is open only while one is pending
+  def mercadolibre_pre_sale?
+    @conversation.inbox.mercadolibre? && @conversation.inbox.channel.pre_sale?
+  end
+
+  def pending_mercadolibre_question?
+    @conversation.messages.incoming.where("messages.additional_attributes->>'mercadolibre_answered' = 'false'").exists?
   end
 
   def last_incoming_message

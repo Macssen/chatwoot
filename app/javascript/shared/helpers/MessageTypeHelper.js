@@ -21,5 +21,9 @@ export const MESSAGE_MAX_LENGTH = {
   // https://core.telegram.org/bots/api#sendmessage
   TELEGRAM: 4096,
   LINE: 2000,
+  // https://developers.mercadolibre.com.ar/es_ar/gestiona-preguntas-respuestas
+  MERCADOLIBRE_ANSWER: 2000,
+  // https://developers.mercadolibre.com.ar/es_ar/mensajeria-post-venta
+  MERCADOLIBRE_POST_SALE: 350,
   EMAIL: 25000,
 };

@@ -172,6 +172,9 @@ export default {
     },
 
     replyWindowBannerMessage() {
+      if (this.isAMercadolibreChannel) {
+        return this.$t('CONVERSATION.MERCADOLIBRE_NO_PENDING_QUESTION');
+      }
       if (this.isAWhatsAppChannel) {
         return this.$t('CONVERSATION.TWILIO_WHATSAPP_CAN_REPLY');
       }
@@ -194,6 +197,9 @@ export default {
       return this.$t('CONVERSATION.CANNOT_REPLY');
     },
     replyWindowLink() {
+      if (this.isAMercadolibreChannel) {
+        return '';
+      }
       if (this.isAFacebookInbox || this.isAnInstagramChannel) {
         return REPLY_POLICY.FACEBOOK;
       }
@@ -209,6 +215,9 @@ export default {
       return '';
     },
     replyWindowLinkText() {
+      if (this.isAMercadolibreChannel) {
+        return '';
+      }
       if (
         this.isAWhatsAppChannel ||
         this.isAFacebookInbox ||
