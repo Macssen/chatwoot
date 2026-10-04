@@ -82,4 +82,24 @@ RSpec.describe Channel::TwilioSms do
       end
     end
   end
+
+  describe '#client' do
+    it 'authenticates API key channels with the dedicated API key secret' do
+      channel = create(:channel_twilio_sms, api_key_sid: 'SKkey', api_key_secret: 'key-secret', auth_token: 'auth-token')
+      allow(Twilio::REST::Client).to receive(:new)
+
+      channel.client
+
+      expect(Twilio::REST::Client).to have_received(:new).with('SKkey', 'key-secret', channel.account_sid)
+    end
+
+    it 'falls back to auth_token for API key channels without a dedicated secret' do
+      channel = create(:channel_twilio_sms, api_key_sid: 'SKkey', auth_token: 'legacy-key-secret')
+      allow(Twilio::REST::Client).to receive(:new)
+
+      channel.client
+
+      expect(Twilio::REST::Client).to have_received(:new).with('SKkey', 'legacy-key-secret', channel.account_sid)
+    end
+  end
 end
