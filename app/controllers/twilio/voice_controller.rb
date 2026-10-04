@@ -1,8 +1,8 @@
-# Twilio voice webhooks. Unauthenticated by design (Twilio calls them);
-# every request is validated against the channel resolved from the :phone
-# path segment plus the posted AccountSid.
+# Twilio voice webhooks. No session auth (Twilio calls them); every request must
+# carry a valid X-Twilio-Signature for the channel resolved from the :phone segment.
 class Twilio::VoiceController < ApplicationController
   before_action :set_channel
+  before_action :validate_twilio_signature
 
   # Returns TwiML. Three legs land here:
   # 1. agent browser leg (TwiML app, is_agent=true, To=<conference name>)
@@ -53,8 +53,14 @@ class Twilio::VoiceController < ApplicationController
 
   def set_channel
     @channel = Channel::TwilioSms.find_by!(phone_number: params[:phone])
-    # cheap authenticity check: the posted AccountSid must match the channel
-    head :unauthorized if params[:AccountSid].present? && params[:AccountSid] != @channel.account_sid
+  end
+
+  # Twilio signs the full URL plus POST params with the account's primary Auth Token.
+  def validate_twilio_signature
+    validator = Twilio::Security::RequestValidator.new(@channel.auth_token)
+    return if validator.validate(request.original_url, request.request_parameters, request.headers['X-Twilio-Signature'].to_s)
+
+    head :forbidden
   end
 
   def render_agent_leg
