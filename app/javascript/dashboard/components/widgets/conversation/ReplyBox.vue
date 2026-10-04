@@ -265,6 +265,12 @@ export default {
       if (this.isATiktokChannel) {
         return MESSAGE_MAX_LENGTH.TIKTOK;
       }
+      if (this.isAMercadolibrePostSaleChannel) {
+        return MESSAGE_MAX_LENGTH.MERCADOLIBRE_POST_SALE;
+      }
+      if (this.isAMercadolibreChannel) {
+        return MESSAGE_MAX_LENGTH.MERCADOLIBRE_ANSWER;
+      }
       if (this.isATwilioWhatsAppChannel) {
         return MESSAGE_MAX_LENGTH.TWILIO_WHATSAPP;
       }
@@ -300,7 +306,8 @@ export default {
         this.isATelegramChannel ||
         this.isALineChannel ||
         this.isAnInstagramChannel ||
-        (this.isATiktokChannel && tiktokAttachmentSupported)
+        (this.isATiktokChannel && tiktokAttachmentSupported) ||
+        this.isAMercadolibrePostSaleChannel
       );
     },
     replyButtonLabel() {

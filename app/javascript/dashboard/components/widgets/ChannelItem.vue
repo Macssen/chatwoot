@@ -74,6 +74,7 @@ const isActive = computed(() => {
     'line',
     'instagram',
     'tiktok',
+    'mercadolibre',
     'voice',
   ].includes(key);
 });
@@ -86,7 +87,9 @@ const isComingSoon = computed(() => {
 });
 
 const isBeta = computed(() => {
-  return ['tiktok', 'voice', 'whatsapp_call'].includes(props.channel.key);
+  return ['tiktok', 'mercadolibre', 'voice', 'whatsapp_call'].includes(
+    props.channel.key
+  );
 });
 
 const hasVoiceBadge = computed(() => {

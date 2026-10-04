@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_09_131050) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_04_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -528,6 +528,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_09_131050) do
     t.index ["line_channel_id"], name: "index_channel_line_on_line_channel_id", unique: true
   end
 
+  create_table "channel_mercadolibre", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.bigint "mercadolibre_seller_id", null: false
+    t.integer "flow", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mercadolibre_seller_id", "flow"], name: "index_channel_mercadolibre_on_mercadolibre_seller_id_and_flow", unique: true
+  end
+
   create_table "channel_sms", force: :cascade do |t|
     t.integer "account_id", null: false
     t.string "phone_number", null: false
@@ -1005,6 +1014,31 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_09_131050) do
     t.index ["user_id"], name: "index_mentions_on_user_id"
   end
 
+  create_table "mercadolibre_apps", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.bigint "app_id", null: false
+    t.string "app_secret", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_mercadolibre_apps_on_account_id", unique: true
+    t.index ["app_id"], name: "index_mercadolibre_apps_on_app_id", unique: true
+  end
+
+  create_table "mercadolibre_sellers", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.bigint "mercadolibre_app_id", null: false
+    t.bigint "seller_id", null: false
+    t.string "nickname"
+    t.string "site_id", default: "MLA", null: false
+    t.string "access_token", null: false
+    t.string "refresh_token", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["mercadolibre_app_id"], name: "index_mercadolibre_sellers_on_mercadolibre_app_id"
+    t.index ["seller_id"], name: "index_mercadolibre_sellers_on_seller_id", unique: true
+  end
+
   create_table "messages", id: :serial, force: :cascade do |t|
     t.text "content"
     t.integer "account_id", null: false
@@ -1363,7 +1397,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_09_131050) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "channel_mercadolibre", "mercadolibre_sellers"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "mercadolibre_sellers", "mercadolibre_apps"
   add_foreign_key "user_sessions", "users"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

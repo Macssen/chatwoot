@@ -15,6 +15,7 @@ export const INBOX_FEATURE_MAP = {
     INBOX_TYPES.WHATSAPP,
     INBOX_TYPES.TELEGRAM,
     INBOX_TYPES.TIKTOK,
+    INBOX_TYPES.MERCADOLIBRE,
     INBOX_TYPES.API,
   ],
   [INBOX_FEATURES.REPLY_TO_OUTGOING]: [
@@ -133,6 +134,15 @@ export default {
     },
     isATiktokChannel() {
       return this.channelType === INBOX_TYPES.TIKTOK;
+    },
+    isAMercadolibreChannel() {
+      return this.channelType === INBOX_TYPES.MERCADOLIBRE;
+    },
+    isAMercadolibrePostSaleChannel() {
+      return (
+        this.isAMercadolibreChannel &&
+        this.inbox.mercadolibre_flow === 'post_sale'
+      );
     },
   },
   methods: {

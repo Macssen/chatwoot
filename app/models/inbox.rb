@@ -134,6 +134,10 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Tiktok'
   end
 
+  def mercadolibre?
+    channel_type == 'Channel::Mercadolibre'
+  end
+
   def web_widget?
     channel_type == 'Channel::WebWidget'
   end
