@@ -29,7 +29,10 @@ class DeviseOverrides::SessionsController < DeviseTokenAuth::SessionsController
 
   private
 
+  # The confirmation state is only disclosed to someone who knows the password.
   def render_create_error_not_confirmed
+    return render_create_error_bad_credentials unless @resource.valid_password?(params[:password])
+
     render_error(
       :unauthorized,
       I18n.t('devise_token_auth.sessions.not_confirmed', email: @resource.email),
