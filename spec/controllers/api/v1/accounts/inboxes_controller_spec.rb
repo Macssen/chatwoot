@@ -1008,6 +1008,18 @@ RSpec.describe 'Inboxes API', type: :request do
         inbox_data = JSON.parse(response.body, symbolize_names: true)
         expect(inbox_data[:agent_bot][:name]).to eq agent_bot.name
       end
+
+      it 'does not include the bot access token for agents' do
+        agent_bot = create(:agent_bot, account: account)
+        create(:agent_bot_inbox, agent_bot: agent_bot, inbox: inbox)
+        get "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}/agent_bot",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['agent_bot']).not_to include('access_token')
+        expect(response.body).not_to include(agent_bot.access_token.token)
+      end
     end
   end
 

@@ -1,7 +1,7 @@
 class AgentBotPolicy < ApplicationPolicy
-  # Bot configuration is not exposed to custom-role agents.
+  # Bot configuration is managed by administrators only.
   def index?
-    @account_user.administrator? || regular_agent?
+    @account_user.administrator?
   end
 
   def update?
@@ -9,7 +9,7 @@ class AgentBotPolicy < ApplicationPolicy
   end
 
   def show?
-    @account_user.administrator? || regular_agent?
+    @account_user.administrator?
   end
 
   def create?
@@ -30,11 +30,5 @@ class AgentBotPolicy < ApplicationPolicy
 
   def reset_secret?
     @account_user.administrator?
-  end
-
-  private
-
-  def regular_agent?
-    @account_user.agent? && @account_user.custom_role_id.blank?
   end
 end

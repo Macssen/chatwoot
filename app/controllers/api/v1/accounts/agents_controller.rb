@@ -66,7 +66,7 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   end
 
   def fetch_agent
-    @agent = agents.find(params[:id])
+    @agent = Current.account.users.find(params[:id])
   end
 
   def account_user_attributes
@@ -98,13 +98,13 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
     @agents ||= scoped_agents.order_by_full_name.includes(:account_users, { avatar_attachment: [:blob] })
   end
 
-  # Custom-role agents must not be able to enumerate the account roster.
-  # Roles that assign/collaborate on conversations see their inbox mates;
-  # everyone else restricted sees only themselves.
+  # Only administrators manage the account roster. Agents who assign/collaborate
+  # on conversations see their inbox mates; custom roles without conversation
+  # management see only themselves.
   def scoped_agents
     users = Current.account.users
-    return users unless restricted_by_custom_role?
-    return users.where(id: Current.user.id) unless custom_role_manages_conversations?
+    return users if Current.account_user.administrator?
+    return users.where(id: Current.user.id) if restricted_by_custom_role? && !custom_role_manages_conversations?
 
     shared_inbox_ids = Current.user.inboxes.where(account_id: Current.account.id).select(:id)
     shared_agent_ids = InboxMember.where(inbox_id: shared_inbox_ids).select(:user_id)

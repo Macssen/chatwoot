@@ -15,10 +15,18 @@ RSpec.describe 'Agent Bot API', type: :request do
       end
     end
 
-    context 'when it is an agent with a custom role' do
+    context 'when it is an agent' do
       let(:custom_role) { create(:custom_role, account: account, permissions: ['conversation_manage']) }
 
       it 'returns unauthorized' do
+        get "/api/v1/accounts/#{account.id}/agent_bots",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it 'returns unauthorized with a custom role' do
         agent.account_users.find_by(account_id: account.id).update!(custom_role: custom_role)
 
         get "/api/v1/accounts/#{account.id}/agent_bots",
@@ -29,11 +37,11 @@ RSpec.describe 'Agent Bot API', type: :request do
       end
     end
 
-    context 'when it is an authenticated user' do
+    context 'when it is an administrator' do
       it 'returns all the agent_bots in account along with global agent bots' do
         global_bot = create(:agent_bot)
         get "/api/v1/accounts/#{account.id}/agent_bots",
-            headers: agent.create_new_auth_token,
+            headers: admin.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
@@ -46,7 +54,7 @@ RSpec.describe 'Agent Bot API', type: :request do
       it 'properly differentiates between system bots and account bots' do
         global_bot = create(:agent_bot)
         get "/api/v1/accounts/#{account.id}/agent_bots",
-            headers: agent.create_new_auth_token,
+            headers: admin.create_new_auth_token,
             as: :json
 
         response_data = response.parsed_body
@@ -80,9 +88,9 @@ RSpec.describe 'Agent Bot API', type: :request do
     end
 
     context 'when it is an authenticated user' do
-      it 'shows the agent bot' do
+      it 'shows the agent bot to an administrator' do
         get "/api/v1/accounts/#{account.id}/agent_bots/#{agent_bot.id}",
-            headers: agent.create_new_auth_token,
+            headers: admin.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
@@ -90,10 +98,18 @@ RSpec.describe 'Agent Bot API', type: :request do
         expect(response.body).to include(agent_bot.access_token.token)
       end
 
+      it 'returns unauthorized for agents' do
+        get "/api/v1/accounts/#{account.id}/agent_bots/#{agent_bot.id}",
+            headers: agent.create_new_auth_token,
+            as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
       it 'will show a global agent bot' do
         global_bot = create(:agent_bot)
         get "/api/v1/accounts/#{account.id}/agent_bots/#{global_bot.id}",
-            headers: agent.create_new_auth_token,
+            headers: admin.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)

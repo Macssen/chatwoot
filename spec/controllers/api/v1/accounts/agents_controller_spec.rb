@@ -16,12 +16,10 @@ RSpec.describe 'Agents API', type: :request do
       end
     end
 
-    context 'when it is an authenticated user' do
-      let!(:agent) { create(:user, account: account, role: :agent) }
-
+    context 'when it is an administrator' do
       it 'returns all agents of account' do
         get "/api/v1/accounts/#{account.id}/agents",
-            headers: agent.create_new_auth_token,
+            headers: admin.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
@@ -30,15 +28,36 @@ RSpec.describe 'Agents API', type: :request do
       end
 
       it 'returns custom fields on agents if present' do
-        agent.update(custom_attributes: { test: 'test' })
+        get "/api/v1/accounts/#{account.id}/agents",
+            headers: admin.create_new_auth_token,
+            as: :json
 
+        expect(response).to have_http_status(:success)
+        admin_data = response.parsed_body.find { |a| a['id'] == admin.id }
+        expect(admin_data['custom_attributes']['test']).to eq('test')
+      end
+    end
+
+    context 'when it is an agent without a custom role' do
+      let!(:inbox_mate) { create(:user, account: account, role: :agent) }
+      let!(:unrelated_agent) { create(:user, account: account, role: :agent) }
+      let(:inbox) { create(:inbox, account: account) }
+
+      before do
+        create(:inbox_member, user: agent, inbox: inbox)
+        create(:inbox_member, user: inbox_mate, inbox: inbox)
+      end
+
+      it 'returns only inbox mates and the agent itself' do
         get "/api/v1/accounts/#{account.id}/agents",
             headers: agent.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
-        data = response.parsed_body
-        expect(data.first['custom_attributes']['test']).to eq('test')
+        expect(response).to conform_schema(200)
+        agent_ids = response.parsed_body.map { |a| a['id'] }
+        expect(agent_ids).to contain_exactly(agent.id, inbox_mate.id)
+        expect(agent_ids).not_to include(admin.id, unrelated_agent.id)
       end
     end
 
