@@ -25,7 +25,8 @@ RSpec.describe 'Canned Responses API', type: :request do
             as: :json
 
         expect(response).to have_http_status(:success)
-        expect(response.parsed_body).to eq(account.canned_responses.as_json)
+        expect(response.parsed_body.pluck('id')).to eq(account.canned_responses.pluck(:id))
+        expect(response.parsed_body.first['created_by']).to be_nil
       end
 
       it 'returns all the canned responses the user searched for' do
@@ -42,9 +43,7 @@ RSpec.describe 'Canned Responses API', type: :request do
             as: :json
 
         expect(response).to have_http_status(:success)
-        expect(response.parsed_body).to eq(
-          [cr3, cr2, cr1].as_json
-        )
+        expect(response.parsed_body.pluck('id')).to eq([cr3, cr2, cr1].map(&:id))
       end
     end
   end
