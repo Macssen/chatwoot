@@ -47,7 +47,7 @@ const mockRoutes = [
     featureFlag: MOCK_FEATURE_FLAGS.LABELS,
   },
   {
-    path: 'accounts/:accountId/settings/canned-response/list',
+    path: 'accounts/:accountId/canned-responses',
     name: 'canned_responses',
     featureFlag: MOCK_FEATURE_FLAGS.CANNED_RESPONSES,
   },
@@ -127,6 +127,26 @@ describe('useGoToCommandHotKeys', () => {
     );
     expect(adminCommand).toBeDefined();
     expect(agentCommand).toBeDefined();
+  });
+
+  it('should expose canned responses as a general command for agents', () => {
+    useAdmin.mockReturnValue({ isAdmin: { value: false } });
+    const { goToCommandHotKeys } = useGoToCommandHotKeys();
+    const command = goToCommandHotKeys.value.find(
+      cmd => cmd.id === 'goto_canned_responses'
+    );
+
+    expect(command.section).toBe('COMMAND_BAR.SECTIONS.GENERAL');
+    expect(command.title).toBe('COMMAND_BAR.COMMANDS.GO_TO_CANNED_RESPONSES');
+    command.handler();
+    expect(useRouter().push).toHaveBeenCalledWith(
+      'accounts/1/canned-responses'
+    );
+    expect(
+      goToCommandHotKeys.value.find(
+        cmd => cmd.id === 'open_canned_response_settings'
+      )
+    ).toBeUndefined();
   });
 
   it('should translate section and title for each command', () => {

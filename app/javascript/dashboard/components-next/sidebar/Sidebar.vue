@@ -435,6 +435,12 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'Canned Responses',
+      label: t('SIDEBAR.CANNED_RESPONSES'),
+      icon: 'i-lucide-message-square-quote',
+      to: accountScopedRoute('canned_responses_index'),
+    },
+    {
       name: 'Captain',
       icon: 'i-woot-captain',
       label: t('SIDEBAR.CAPTAIN'),
@@ -792,12 +798,6 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.MACROS'),
           icon: 'i-lucide-toy-brick',
           to: accountScopedRoute('macros_wrapper'),
-        },
-        {
-          name: 'Settings Canned Responses',
-          label: t('SIDEBAR.CANNED_RESPONSES'),
-          icon: 'i-lucide-message-square-quote',
-          to: accountScopedRoute('canned_list'),
         },
         {
           name: 'Settings Integrations',

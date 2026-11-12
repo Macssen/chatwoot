@@ -27,6 +27,15 @@ const getters = useStoreGetters();
 const store = useStore();
 const { t } = useI18n();
 const { isAdmin } = useAdmin();
+const currentUserId = computed(() => getters.getCurrentUserID.value);
+const currentCustomRoleId = computed(
+  () => getters.getCurrentCustomRoleId.value
+);
+
+const canCreate = computed(() => isAdmin.value || !currentCustomRoleId.value);
+const canManage = item =>
+  isAdmin.value ||
+  (!currentCustomRoleId.value && item.created_by?.id === currentUserId.value);
 
 const { getPlainText } = useMessageFormatter();
 
@@ -85,7 +94,7 @@ onMounted(() => {
 });
 
 const showAlertMessage = message => {
-  loading[activeResponse.value.id] = false;
+  loading.value[activeResponse.value.id] = false;
   activeResponse.value = {};
   cannedResponseAPI.value.message = message;
   useAlert(message);
@@ -127,16 +136,20 @@ const deleteCannedResponse = async id => {
 };
 
 const confirmDeletion = () => {
-  loading[activeResponse.value.id] = true;
+  loading.value[activeResponse.value.id] = true;
   closeDeletePopup();
   deleteCannedResponse(activeResponse.value.id);
 };
 
 const tableHeaders = computed(() => {
-  return [
+  const headers = [
     t('CANNED_MGMT.LIST.TABLE_HEADER.SHORT_CODE'),
-    t('CANNED_MGMT.LIST.TABLE_HEADER.ACTIONS'),
+    t('CANNED_MGMT.LIST.TABLE_HEADER.CREATED_BY'),
   ];
+  if (canCreate.value) {
+    headers.push(t('CANNED_MGMT.LIST.TABLE_HEADER.ACTIONS'));
+  }
+  return headers;
 });
 </script>
 
@@ -161,7 +174,7 @@ const tableHeaders = computed(() => {
             {{ $t('CANNED_MGMT.COUNT', { n: records.length }) }}
           </span>
         </template>
-        <template #actions>
+        <template v-if="canCreate" #actions>
           <Button
             :label="$t('CANNED_MGMT.HEADER_BTN_TXT')"
             size="sm"
@@ -201,10 +214,6 @@ const tableHeaders = computed(() => {
             />
           </button>
         </template>
-        <template #header-1>
-          {{ tableHeaders[1] }}
-        </template>
-
         <template #row="{ items }">
           <BaseTableRow
             v-for="cannedItem in items"
@@ -223,9 +232,27 @@ const tableHeaders = computed(() => {
                 </div>
               </BaseTableCell>
 
-              <BaseTableCell align="end" class="w-24">
+              <BaseTableCell class="w-40">
+                <span
+                  v-if="cannedItem.created_by?.id === currentUserId"
+                  class="text-body-main text-n-slate-12"
+                >
+                  {{ $t('CANNED_MGMT.LIST.CREATED_BY_YOU') }}
+                </span>
+                <span
+                  v-else-if="cannedItem.created_by"
+                  class="text-body-main text-n-slate-11 truncate block"
+                >
+                  {{ cannedItem.created_by.name }}
+                </span>
+                <span v-else class="text-body-main text-n-slate-10">
+                  {{ $t('CANNED_MGMT.LIST.NO_OWNER') }}
+                </span>
+              </BaseTableCell>
+
+              <BaseTableCell v-if="canCreate" align="end" class="w-24">
                 <div
-                  v-if="isAdmin"
+                  v-if="canManage(cannedItem)"
                   class="flex gap-3 justify-end flex-shrink-0"
                 >
                   <Button

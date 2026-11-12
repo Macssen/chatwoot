@@ -4,14 +4,14 @@ class CannedResponsePolicy < ApplicationPolicy
   end
 
   def create?
-    true
+    @account_user.administrator? || @account_user.custom_role_id.nil?
   end
 
   def update?
-    @account_user.administrator?
+    @account_user.administrator? || (@account_user.custom_role_id.nil? && record.created_by_id == @user.id)
   end
 
   def destroy?
-    @account_user.administrator?
+    update?
   end
 end

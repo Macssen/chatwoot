@@ -20,6 +20,7 @@ RSpec.describe User do
     it { is_expected.to have_many(:messages) }
     it { is_expected.to have_many(:reporting_events) }
     it { is_expected.to have_many(:teams) }
+    it { is_expected.to have_many(:created_canned_responses).class_name('CannedResponse').with_foreign_key(:created_by_id).dependent(:nullify) }
   end
 
   describe 'concerns' do

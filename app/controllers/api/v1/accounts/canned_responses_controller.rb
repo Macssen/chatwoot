@@ -3,18 +3,15 @@ class Api::V1::Accounts::CannedResponsesController < Api::V1::Accounts::BaseCont
   before_action :check_authorization
 
   def index
-    render json: canned_responses
+    @canned_responses = canned_responses.includes(:created_by)
   end
 
   def create
-    @canned_response = Current.account.canned_responses.new(canned_response_params)
-    @canned_response.save!
-    render json: @canned_response
+    @canned_response = Current.account.canned_responses.create!(canned_response_params.merge(created_by: Current.user))
   end
 
   def update
     @canned_response.update!(canned_response_params)
-    render json: @canned_response
   end
 
   def destroy
@@ -23,6 +20,10 @@ class Api::V1::Accounts::CannedResponsesController < Api::V1::Accounts::BaseCont
   end
 
   private
+
+  def check_authorization
+    super(@canned_response || CannedResponse)
+  end
 
   def fetch_canned_response
     @canned_response = Current.account.canned_responses.find(params[:id])
