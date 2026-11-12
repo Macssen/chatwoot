@@ -47,7 +47,7 @@ const mockRoutes = [
     featureFlag: MOCK_FEATURE_FLAGS.LABELS,
   },
   {
-    path: 'accounts/:accountId/settings/canned-response/list',
+    path: 'accounts/:accountId/canned-responses',
     name: 'canned_responses',
     featureFlag: MOCK_FEATURE_FLAGS.CANNED_RESPONSES,
   },

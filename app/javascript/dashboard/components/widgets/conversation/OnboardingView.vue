@@ -63,7 +63,7 @@ const greetingMessage = computed(() => {
     <OnboardingFeatureCard
       image-src="/dashboard/images/onboarding/canned-responses.png"
       image-alt="Canned responses"
-      to="canned_list"
+      to="canned_responses_index"
       :title="$t('ONBOARDING.CANNED_RESPONSES.TITLE')"
       :description="$t('ONBOARDING.CANNED_RESPONSES.DESCRIPTION')"
       :link-text="$t('ONBOARDING.CANNED_RESPONSES.NEW_LINK')"

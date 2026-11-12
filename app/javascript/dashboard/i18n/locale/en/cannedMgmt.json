@@ -16,8 +16,11 @@
       "TABLE_HEADER": {
         "SHORT_CODE": "Short code",
         "CONTENT": "Content",
+        "CREATED_BY": "Created by",
         "ACTIONS": "Actions"
-      }
+      },
+      "CREATED_BY_YOU": "You",
+      "NO_OWNER": "No owner"
     },
     "ADD": {
       "TITLE": "Add canned response",

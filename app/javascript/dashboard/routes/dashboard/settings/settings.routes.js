@@ -43,7 +43,7 @@ export default {
           return { name: 'general_settings_index', params: to.params };
         }
 
-        return { name: 'canned_list', params: to.params };
+        return { name: 'canned_responses_index', params: to.params };
       },
     },
     ...account.routes,

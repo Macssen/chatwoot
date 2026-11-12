@@ -4,6 +4,7 @@ import { useTimeoutFn } from '@vueuse/core';
 import { provideMessageContext } from './provider.js';
 import { useTrack } from 'dashboard/composables';
 import { useMapGetter } from 'dashboard/composables/store';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 import { emitter } from 'shared/helpers/mitt';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
@@ -148,6 +149,8 @@ const route = useRoute();
 const inboxGetter = useMapGetter('inboxes/getInbox');
 const inbox = computed(() => inboxGetter.value(props.inboxId) || {});
 const isOnChatwootCloud = useMapGetter('globalConfig/isOnChatwootCloud');
+const currentCustomRoleId = useMapGetter('getCurrentCustomRoleId');
+const { isAdmin } = useAdmin();
 const { replaceInstallationName } = useBranding();
 
 const isCaptainMessage = computed(() => {
@@ -389,7 +392,11 @@ const contextMenuEnabledOptions = computed(() => {
       (hasText || hasAttachments) &&
       !isFailedOrProcessing &&
       !isMessageDeleted.value,
-    cannedResponse: isOutgoing && hasText && !isMessageDeleted.value,
+    cannedResponse:
+      (isAdmin.value || !currentCustomRoleId.value) &&
+      isOutgoing &&
+      hasText &&
+      !isMessageDeleted.value,
     copyLink: !isFailedOrProcessing,
     translate: !isFailedOrProcessing && !isMessageDeleted.value && hasText,
     replyTo:

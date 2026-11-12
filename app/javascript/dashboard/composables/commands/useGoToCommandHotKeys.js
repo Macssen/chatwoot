@@ -42,6 +42,15 @@ const GO_TO_COMMANDS = [
     role: ['administrator', 'agent'],
   },
   {
+    id: 'goto_canned_responses',
+    title: 'COMMAND_BAR.COMMANDS.GO_TO_CANNED_RESPONSES',
+    section: 'COMMAND_BAR.SECTIONS.GENERAL',
+    featureFlag: FEATURE_FLAGS.CANNED_RESPONSES,
+    icon: ICON_CANNED_RESPONSE,
+    path: accountId => `accounts/${accountId}/canned-responses`,
+    role: ['administrator', 'agent'],
+  },
+  {
     id: 'open_reports_overview',
     section: 'COMMAND_BAR.SECTIONS.REPORTS',
     title: 'COMMAND_BAR.COMMANDS.GO_TO_REPORTS_OVERVIEW',
@@ -130,15 +139,6 @@ const GO_TO_COMMANDS = [
     icon: ICON_LABELS,
     path: accountId => `accounts/${accountId}/settings/labels/list`,
     role: ['administrator'],
-  },
-  {
-    id: 'open_canned_response_settings',
-    title: 'COMMAND_BAR.COMMANDS.GO_TO_SETTINGS_CANNED_RESPONSES',
-    featureFlag: FEATURE_FLAGS.CANNED_RESPONSES,
-    section: 'COMMAND_BAR.SECTIONS.SETTINGS',
-    icon: ICON_CANNED_RESPONSE,
-    path: accountId => `accounts/${accountId}/settings/canned-response/list`,
-    role: ['administrator', 'agent'],
   },
   {
     id: 'open_applications_settings',
